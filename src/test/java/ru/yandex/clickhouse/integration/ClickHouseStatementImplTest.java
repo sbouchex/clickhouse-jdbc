@@ -23,11 +23,7 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import ru.yandex.clickhouse.ClickHouseConnection;
-import ru.yandex.clickhouse.ClickHouseContainerForTest;
-import ru.yandex.clickhouse.ClickHouseDataSource;
-import ru.yandex.clickhouse.ClickHouseExternalData;
-import ru.yandex.clickhouse.ClickHouseStatement;
+import ru.yandex.clickhouse.*;
 import ru.yandex.clickhouse.settings.ClickHouseProperties;
 import ru.yandex.clickhouse.settings.ClickHouseQueryParam;
 
@@ -144,6 +140,21 @@ public class ClickHouseStatementImplTest {
 
         Assert.assertEquals(userName, "User");
         Assert.assertEquals(groupName, "Group");
+    }
+
+    @Test
+    public void testAdditionalExternalData() throws SQLException {
+        try (ClickHouseStatementImpl stmt = connection.createStatement().unwrap(ClickHouseStatementImpl.class)) {
+            stmt.addExternalData(new ClickHouseExternalData(
+                    "data",
+                    new ByteArrayInputStream("1\n2\n3\n".getBytes())
+            ).withStructure("val UInt64"));
+
+            ResultSet rs = stmt.executeQuery("select count() from data");
+            rs.next();
+
+            Assert.assertEquals(rs.getInt(1), 3);
+        }
     }
 
     @Test
